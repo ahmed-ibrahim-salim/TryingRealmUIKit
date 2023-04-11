@@ -12,32 +12,15 @@ class ViewController: UIViewController {
 
     
     let user = User(id: "1", name: "Mido")
+    let realmManager = RealmManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         view.backgroundColor = .systemBackground
         
-        // Initialize
-        // Open the local-only default realm
-        let realm = try! Realm()
-
-
-        // Create
-        // add An object to realmDatabase
-        let todo = Todo(name: "Do laundry", ownerId: user.id)
-        try! realm.write {
-            realm.add(todo)
-        }
         
-        // Retrieve
-        // Get all todos in the realm
-        let todos = realm.objects(Todo.self)
-        // Filter
-        let todosInProgress = todos.where {
-            $0.status == "InProgress"
-        }
-        print("A list of all todos in progress: \(todosInProgress)")
+       
 
     }
 }
@@ -46,6 +29,13 @@ class RealmManager{
     private let realm = try! Realm()
 
     
+    // Create
+    // add An object to realmDatabase
+    func addObjectToRealm(objectToAdd: Todo){
+        try! realm.write {
+            realm.add(objectToAdd)
+        }
+    }
     
     // Retrieve
     // Get all todos in the realm
@@ -53,14 +43,15 @@ class RealmManager{
         return realm.objects(Todo.self)
     }
     
-    func getObjectWith(){
+    private func getObjectWithFilter(){
         let todos = realm.objects(Todo.self)
         // Filter
         let todosInProgress = todos.where {
             $0.status == "InProgress"
         }
+        print("A list of all todos in progress: \(todosInProgress)")
+
     }
-    
     
     
     // Update
