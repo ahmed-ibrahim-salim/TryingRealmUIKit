@@ -7,17 +7,59 @@
 
 import UIKit
 import RealmSwift
+import SnapKit
+import AVFoundation
+
 
 class VideoCacheViewController: UIViewController {
     
+    
+    
+    private var playerViewWithCache: VideoPlayerView!
+    
+    
+    // URL for the test video.
+    private let videoURL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+    
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        makePlayer()
         
+        playVideo()
+        
+        view.backgroundColor = .systemBackground
         
     }
+
+    func makePlayer(){
+        
+        //        playerView = PlayerView()
+        playerViewWithCache = VideoPlayerView()
+        
+        playerViewWithCache.layer.borderColor = UIColor.red.cgColor
+        playerViewWithCache.layer.borderWidth = 2
+        
+        view.addSubview(playerViewWithCache)
+        
+        playerViewWithCache.snp.makeConstraints({ make in
+            make.centerX.centerY.equalToSuperview()
+            make.height.equalTo(150)
+            make.width.equalTo(250)
+        })
+    }
     
-    
+    // controller
+    func playVideo() {
+        guard let url = URL(string: videoURL) else { return }
+        
+        playerViewWithCache.configure(url: url, fileExtension: ".mp4", size: (700, 800))
+    }
 }
+
+
+
 
 class VideosViewModel {
     let realm = try! Realm()
@@ -29,7 +71,7 @@ class VideosViewModel {
     
     // add video to cache and video info
     func addVideoToCache(withVideo: VideoData){
-        // save video in cache only when 
+        // save video in cache only when
         
         
         
