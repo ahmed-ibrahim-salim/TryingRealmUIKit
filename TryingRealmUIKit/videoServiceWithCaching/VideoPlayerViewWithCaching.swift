@@ -46,6 +46,8 @@ class VideoPlayerView: UIView {
     private var videoData: Data?
     private var fileExtension: String?
     
+    
+    
     // MARK: - Initializers
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -76,6 +78,8 @@ class VideoPlayerView: UIView {
         avPlayerLayer = AVPlayerLayer(player: queuePlayer)
         //avPlayerLayer.videoGravity = .resizeAspectFill
         self.layer.addSublayer(self.avPlayerLayer)
+        
+        
     }
     
     func configure(url: URL?, fileExtension: String?, size: (Int, Int)){
@@ -89,10 +93,19 @@ class VideoPlayerView: UIView {
             return
         }
         self.fileExtension = fileExtension
-        VideoCacheManager.shared.queryURLFromCache(key: url.absoluteString, fileExtension: fileExtension, completion: {[weak self] (data) in
+        // MARK: to search in cache
+        VideoCacheManager.shared.queryURLFromCache(key: url.absoluteString, fileExtension: fileExtension, completion: {
+            [weak self] (data) in
+                
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 if let path = data as? String {
+                    
+                    // found in cache then get from Realm
+                    VideosInfoManagerWithRealm.queryVideoInfo(videoUrl: url.absoluteString)
+                    
+                    
+                    // video foun on in cache
                     self.videoURL = URL(fileURLWithPath: path)
                 } else {
                     // Adding Redirect URL(customized prefix schema) to trigger AVAssetResourceLoaderDelegate
@@ -100,10 +113,11 @@ class VideoPlayerView: UIView {
                         print("\(url)\nCould not convert the url to a redirect url.")
                         return
                     }
+                    
                     self.videoURL = redirectUrl
                 }
                 self.originalURL = url
-                
+//                print(self.videoURL, "video url", self.originalURL,"original generated URL")
                 
                 self.asset = AVURLAsset(url: self.videoURL!)
                 self.asset!.resourceLoader.setDelegate(self, queue: .main)
@@ -216,7 +230,14 @@ extension VideoPlayerView: URLSessionTaskDelegate, URLSessionDataDelegate {
         if let error = error {
             print("AVURLAsset Download Data Error: " + error.localizedDescription)
         } else {
+            
+            // MARK: //only store data to cache when downloading finish
             VideoCacheManager.shared.storeDataToCache(data: self.videoData, key: self.originalURL!.absoluteString, fileExtension: self.fileExtension)
+            
+            //MARK: Realm
+            let videoData = VideoData(name: "New Name", url: self.originalURL!.absoluteString, bookmarked: false)
+            
+            VideosInfoManagerWithRealm.addVideoInfoToRealm(video: videoData)
         }
     }
     
@@ -273,6 +294,8 @@ extension VideoPlayerView: URLSessionTaskDelegate, URLSessionDataDelegate {
 
 // MARK: - AVAssetResourceLoader Delegate
 extension VideoPlayerView: AVAssetResourceLoaderDelegate {
+    
+    
     func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         if task == nil, let url = originalURL {
             let request = URLRequest.init(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)

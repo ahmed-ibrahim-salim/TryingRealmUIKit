@@ -46,8 +46,13 @@ class VideoCacheManager: NSObject {
     
     /// Store Data in Cache
     func storeDataToCache(data: Data?, key: String, fileExtension: String?) {
+        print(key, "video key to store")
+
+        
         dispatchQueue?.async {
+            // (1
             self.storeDataToMemoryCache(data: data, key: key)
+            // (2
             self.storeDataToDiskCache(data: data, key: key, fileExtension: fileExtension)
         }
     }
@@ -84,6 +89,7 @@ class VideoCacheManager: NSObject {
     
     /// - Parameter Key: URL  Absolute String
     func queryURLFromCache(key: String, fileExtension: String?, completion: @escaping (_ data: Any?) -> Void) {
+//        print(key, "video key to query")
         dispatchQueue?.sync {
             let path = diskCachePathForKey(key: key, fileExtension: fileExtension) ?? ""
             if diskCache.fileExists(atPath: path) {

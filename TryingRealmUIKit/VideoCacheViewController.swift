@@ -12,17 +12,11 @@ import AVFoundation
 
 
 class VideoCacheViewController: UIViewController {
-    
-    
-    
     private var playerViewWithCache: VideoPlayerView!
-    
     
     // URL for the test video.
     private let videoURL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-    
-
-    
+    //MARK: Didload
     override func viewDidLoad() {
         super.viewDidLoad()
         makePlayer()
@@ -32,9 +26,9 @@ class VideoCacheViewController: UIViewController {
         view.backgroundColor = .systemBackground
         
     }
-
+    
+    //MARK: Add Player to the screen
     func makePlayer(){
-        
         //        playerView = PlayerView()
         playerViewWithCache = VideoPlayerView()
         
@@ -58,58 +52,64 @@ class VideoCacheViewController: UIViewController {
     }
 }
 
-
-
-
-class VideosViewModel {
-    let realm = try! Realm()
-    var videosCache: Results<VideoCache>?
-    //    var dbLastVideo: VideoCache?
-    var lastVideo: VideoCache?
-    let internetConnectionIsOn = false
+//MARK: Realm Manager
+class VideosInfoManagerWithRealm {
+    static let realm = try! Realm()
+    var videosCache: Results<VideoEntityRealm>?
     
-    
+        
     // add video to cache and video info
-    func addVideoToCache(withVideo: VideoData){
-        // save video in cache only when
+    static func addVideoInfoToRealm(video: VideoData){
         
+        let videoToAdd = VideoEntityRealm(video: video)
         
-        
+        try! realm.write {
+            realm.add(videoToAdd)
+        }
         // save video data to Realm
-        
         
     }
     
     
     // query for videos an video inf
-    func loadVideosAndVideosInfo(){
-        if internetConnectionIsOn{
-            print("internet is here")
-        }else{
-            // load from cache
-            
-            // get list of videos from cache
-            
-            
-            // query info for video url
-            let videosInfoFromCache = realm.objects(VideoCache.self).filter({
-                video in
-                print(video.videoURLId)
-                return false
-            }
-            )
-            
-            
-        }
+    static func queryVideoInfo(videoUrl: String) -> VideoEntityRealm?{
+        
+        // query info for video url
+        let videosInfoFromCache = realm.objects(VideoEntityRealm.self).filter({
+            video in
+            videoUrl == video.videoURLId
+//            print(video.videoURLId)
+//            return false
+        })
+        
+        print(videosInfoFromCache, "found or not")
+        
+        return videosInfoFromCache.first
     }
     
+    // Retrieve
+    // Get all videos in the realm
+    static func getAllObjects()->Results<VideoEntityRealm>{
+        return realm.objects(VideoEntityRealm.self)
+    }
+    
+    // Delete All
+    static func clearDatabase(){
+        // All modifications to a realm must happen in a write block.
+        let videosInfo = realm.objects(VideoEntityRealm.self)
+        
+        for videoInfo in videosInfo{
+            try! realm.write {
+                // Delete the Todo.
+                realm.delete(videoInfo)
+            }
+        }
+    }
 }
 
-// Realm model
-class VideoCache: Object {
+//MARK: Realm model
+class VideoEntityRealm: Object {
     @objc dynamic var videoURLId: String = ""
-    //    @objc dynamic var videoDate: String = ""
-    //    @objc dynamic var videoImageURL: String = ""
     @objc dynamic var videoTitle: String = ""
     @objc dynamic var bookmarked: Bool = false
     
@@ -126,7 +126,7 @@ class VideoCache: Object {
     }
 }
 
-// Model
+//MARK: Network Model
 struct VideoData{
     let name: String
     let url: String
